@@ -1,2 +1,2 @@
-# aptos-blindness
-APTOS 2019 Blindness Detection
+# APTOS 2019 Blindness Detection
+#### Kaggle Competition
