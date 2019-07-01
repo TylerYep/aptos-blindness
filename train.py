@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import os
 import time
 import numpy as np
 import pandas as pd
@@ -11,13 +10,12 @@ import torchvision
 
 from tensorboardX import SummaryWriter
 from cnn_finetune import make_model
-from PIL import Image
 from tqdm import tqdm
 
 import const
-from dataset import ImageDataset, load_data
+from dataset import RetinopathyDataset, load_data
 from util import AverageMeter
-from models import Xception
+# from models import Xception
 
 def train(model, train_loader, dev_loader):
     start_time = time.time()
@@ -51,9 +49,6 @@ def train(model, train_loader, dev_loader):
 
                 output = model(input_)
                 loss = criterion(output, target)
-
-                confs, predicts = torch.max(output.detach(), dim=1)
-                avg_score.update(GAP(predicts, confs, target))
                 losses.update(loss.data.item(), input_.size(0))
 
                 if phase == 'train':
@@ -65,18 +60,17 @@ def train(model, train_loader, dev_loader):
                     tbx.add_scalar(phase + '/loss', losses.val, epoch*num_steps+i)
 
                 if i % const.LOG_FREQ == 0 and phase == 'train':
-                    print(f'{epoch} [{i}/{num_steps}]\t'
-                            f'loss {losses.val:.4f} ({losses.avg:.4f})\t)
-                    torch.save(model.state_dict(), f'save/{const.RUN_ID}/weights_{epoch*num_steps+i}.pth')
+                    print(f'{epoch} [{i}/{num_steps}]\t loss {losses.val:.4f} ({losses.avg:.4f})\t')
+                    torch.save(model.state_dict(), f'save/{const.RUN_ID}/weights_{int(epoch*num_steps+i)}.pth')
     print(end_time - start_time)
 
 if __name__ == '__main__':
-    train_loader, dev_loader, label_encoder, num_classes = load_data()
-    np.save('label_encoder.npy', label_encoder.classes_)
+    # train_loader, dev_loader, label_encoder = load_data()
+    train_loader = load_data()
+    dev_loader = None
 
     if const.CURR_MODEL == 'xception':
-        model = make_model('xception', num_classes=num_classes, pretrained=True,
-                           pool=nn.AdaptiveAvgPool2d(1))
+        model = make_model('xception', num_classes=num_classes, pretrained=True, pool=nn.AdaptiveAvgPool2d(1))
         c = 0
         for layer in model.parameters():
             if c < 85:
@@ -88,10 +82,7 @@ if __name__ == '__main__':
     elif const.CURR_MODEL == 'resnet50':
         model = torchvision.models.resnet50(pretrained=True)
         model.avg_pool = nn.AdaptiveAvgPool2d(1)
-        model.fc = nn.Linear(model.fc.in_features, num_classes)
-
-    elif const.CURR_MODEL == 'attention':
-        model = Xception(num_classes)
+        model.fc = nn.Linear(model.fc.in_features, const.NUM_CLASSES)
 
     if const.RUN_ON_GPU:
         if const.CONTINUE_FROM is not None:

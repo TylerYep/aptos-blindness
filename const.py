@@ -1,11 +1,12 @@
-RUN_ON_GPU = True
-RUN_ID = 'selfattn'
-# CONTINUE_FROM = f'save/{RUN_ID}/weights_395000.0.pth'
+RUN_ON_GPU = False
+RUN_ID = 'baseline'
+# CONTINUE_FROM = f'save/{RUN_ID}/weights_1.pth'
 CONTINUE_FROM = None
-MODELS = ('resnet50')
+LAST_SAVE = 0
+MODELS = ('resnet50',)
 CURR_MODEL = MODELS[0]
 
-NUM_CLASSES = 4
+NUM_CLASSES = 5
 DATA_PATH = 'data/' #'../input/aptos2019-blindness-detection/'
 if RUN_ON_GPU:
     BATCH_SIZE = 16
@@ -21,6 +22,6 @@ LOG_FREQ = 5000
 PLT_FREQ = 100
 NUM_TOP_PREDICTS = 20
 
-INPUT_SHAPE = (299, 299)
+INPUT_SHAPE = (224, 224)
 DEV_CSV = DATA_PATH + 'dev.csv'
 TEST_CSV = DATA_PATH + 'test.csv'
