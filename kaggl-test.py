@@ -5,7 +5,6 @@ import os
 import numpy as np
 import pandas as pd
 import torch
-import torchvision
 import torch.nn as nn
 import pretrainedmodels
 from torch.utils.data import Dataset, DataLoader
@@ -18,7 +17,7 @@ CURR_MODEL = 'mmmodel'
 DATA_PATH = '../input/aptos2019-blindness-detection/'
 TTA = 10
 BATCH_SIZE = 32
-CUTOFFS = np.array([0.5, 1.5, 2.5, 3.5])
+CUTOFFS = np.array([0.5, 1.6, 2.5, 3.6])
 
 class RetinopathyDataset(Dataset):
     def __init__(self, csv_file, mode='test'):
@@ -44,20 +43,24 @@ class RetinopathyDataset(Dataset):
             return image, label
         return image
 
+class ResNet101():
+    def __init__(self):
+        self.model = pretrainedmodels.__dict__['resnet101'](pretrained=None)
+        self.model.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.model.last_linear = nn.Sequential(
+            nn.BatchNorm1d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+            nn.Dropout(p=0.25),
+            nn.Linear(in_features=2048, out_features=2048),
+            nn.ReLU(),
+            nn.BatchNorm1d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+            nn.Dropout(p=0.5),
+            nn.Linear(in_features=2048, out_features=1),
+        )
+
 if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    model = pretrainedmodels.__dict__['resnet101'](pretrained=None)
-    model.avg_pool = nn.AdaptiveAvgPool2d(1)
-    model.last_linear = nn.Sequential(
-        nn.BatchNorm1d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
-        nn.Dropout(p=0.25),
-        nn.Linear(in_features=2048, out_features=2048),
-        nn.ReLU(),
-        nn.BatchNorm1d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
-        nn.Dropout(p=0.5),
-        nn.Linear(in_features=2048, out_features=1),
-    )
+    model = ResNet101().model
     model.load_state_dict(torch.load(f'../input/'{CURR_MODEL}'/model.bin'))
     model.cuda()
 
