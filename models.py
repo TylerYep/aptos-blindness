@@ -5,10 +5,9 @@ from cnn_finetune import make_model
 import const
 
 class Xception(nn.Module):
-    def __init__(self, num_classes=const.NUM_CLASSES):
+    def __init__(self):
         super().__init__()
-
-        self.xception = make_model('xception', num_classes=num_classes, pretrained=True,
+        self.xception = make_model('xception', num_classes=const.NUM_CLASSES, pretrained=True,
                                    pool=nn.AdaptiveMaxPool2d(1))
         c = 0
         for layer in self.xception.parameters():

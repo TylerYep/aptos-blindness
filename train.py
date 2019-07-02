@@ -70,19 +70,22 @@ if __name__ == '__main__':
     dev_loader = None
 
     if const.CURR_MODEL == 'xception':
-        model = make_model('xception', num_classes=num_classes, pretrained=True, pool=nn.AdaptiveAvgPool2d(1))
-        c = 0
-        for layer in model.parameters():
-            if c < 85:
-                layer.requires_grad = False
-            else:
-                layer.requires_grad = True
-            c += 1
+        pass
 
-    elif const.CURR_MODEL == 'resnet50':
-        model = torchvision.models.resnet50(pretrained=True)
+    elif const.CURR_MODEL == 'resnet101':
+        model = torchvision.models.resnet101(pretrained=True)
         model.avg_pool = nn.AdaptiveAvgPool2d(1)
+
         model.fc = nn.Linear(model.fc.in_features, const.NUM_CLASSES)
+        # model.last_linear = nn.Sequential(
+        #     nn.BatchNorm1d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+        #     nn.Dropout(p=0.25),
+        #     nn.Linear(in_features=2048, out_features=2048),
+        #     nn.ReLU(),
+        #     nn.BatchNorm1d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+        #     nn.Dropout(p=0.5),
+        #     nn.Linear(in_features=2048, out_features=1),
+        # )
 
     if const.RUN_ON_GPU:
         if const.CONTINUE_FROM is not None:
