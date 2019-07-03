@@ -7,7 +7,7 @@ import const
 class Xception(nn.Module):
     def __init__(self):
         super().__init__()
-        self.xception = make_model('xception', num_classes=const.NUM_CLASSES, pretrained=True,
+        self.xception = make_model('xception', num_classes=1, pretrained=True,
                                    pool=nn.AdaptiveMaxPool2d(1))
         c = 0
         for layer in self.xception.parameters():

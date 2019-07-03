@@ -15,11 +15,12 @@ from tqdm import tqdm
 import const
 from dataset import RetinopathyDataset, load_data
 from util import AverageMeter
-# from models import Xception
+from kappa import quadratic_weighted_kappa
+from models import Xception
 
 def train(model, train_loader, dev_loader):
     start_time = time.time()
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=const.LEARNING_RATE)
     tbx = SummaryWriter(f'save/{const.RUN_ID}/')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -30,7 +31,7 @@ def train(model, train_loader, dev_loader):
         losses = AverageMeter()
 
         end_time = time.time()
-        for phase in ('train',): # 'val'
+        for phase in ('train', 'val'):
             if phase == 'train':
                 model.train()
                 dataloader = train_loader
@@ -41,51 +42,36 @@ def train(model, train_loader, dev_loader):
                 num_steps = min(len(dev_loader), const.MAX_STEPS_PER_EPOCH)
 
             epoch = const.LAST_SAVE / num_steps + e
-            for i, (input_, target) in enumerate(tqdm(dataloader)):
+            for i, (input, targ) in enumerate(tqdm(dataloader)):
                 if i >= num_steps:
                     break
-                input_ = input_.to(device)
-                target = target.to(device)
-
-                output = model(input_)
+                input = input.to(device)
+                target = targ.float().reshape(-1, 1).to(device)
+                output = model(input)
                 loss = criterion(output, target)
-                losses.update(loss.data.item(), input_.size(0))
+                losses.update(loss.data.item(), input.size(0))
 
                 if phase == 'train':
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
 
-                if i % const.PLT_FREQ == 0:
-                    tbx.add_scalar(phase + '/loss', losses.val, epoch*num_steps+i)
+                if i % 100 == 0:
+                    iter = int(epoch*num_steps+i)
+                    quadratic_kappa = quadratic_weighted_kappa(targ, output.detach().int().numpy())
+                    tbx.add_scalar(phase + '/loss', losses.val, iter)
+                    tbx.add_scalar(phase + '/kappa', quadratic_kappa, iter)
 
-                if i % const.LOG_FREQ == 0 and phase == 'train':
-                    print(f'{epoch} [{i}/{num_steps}]\t loss {losses.val:.4f} ({losses.avg:.4f})\t')
-                    torch.save(model.state_dict(), f'save/{const.RUN_ID}/weights_{int(epoch*num_steps+i)}.pth')
+                    if i % 5000 == 0 and phase == 'train':
+                        print(f'{epoch} [{i}/{num_steps}]\t loss {losses.val:.4f} ({losses.avg:.4f})\t kappa {quadratic_kappa:.4f}')
+                        torch.save(model.state_dict(), f'save/{const.RUN_ID}/weights_{iter}.pth')
     print(end_time - start_time)
 
 if __name__ == '__main__':
-    # train_loader, dev_loader, label_encoder = load_data()
-    train_loader = load_data()
-    dev_loader = None
+    train_loader, dev_loader = load_data()
 
     if const.CURR_MODEL == 'xception':
-        pass
-
-    elif const.CURR_MODEL == 'resnet101':
-        model = torchvision.models.resnet101(pretrained=True)
-        model.avg_pool = nn.AdaptiveAvgPool2d(1)
-
-        model.fc = nn.Linear(model.fc.in_features, const.NUM_CLASSES)
-        # model.last_linear = nn.Sequential(
-        #     nn.BatchNorm1d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
-        #     nn.Dropout(p=0.25),
-        #     nn.Linear(in_features=2048, out_features=2048),
-        #     nn.ReLU(),
-        #     nn.BatchNorm1d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
-        #     nn.Dropout(p=0.5),
-        #     nn.Linear(in_features=2048, out_features=1),
-        # )
+        model = Xception()
 
     if const.RUN_ON_GPU:
         if const.CONTINUE_FROM is not None:

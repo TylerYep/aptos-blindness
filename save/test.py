@@ -7,8 +7,6 @@ import torch
 import torch.nn as nn
 import torchvision
 
-# from sklearn.preprocessing import LabelEncoder
-# from cnn_finetune import make_model
 from tqdm import tqdm
 
 import const
