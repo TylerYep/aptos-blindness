@@ -46,8 +46,8 @@ def train(model, train_loader, dev_loader):
                 if i >= num_steps:
                     break
                 input = input.to(device)
-                target = targ.float().reshape(-1, 1).to(device)
-                output = model(input)
+                target = targ.float().to(device)
+                output = model(input).squeeze()
                 loss = criterion(output, target)
                 losses.update(loss.data.item(), input.size(0))
 
@@ -70,8 +70,7 @@ def train(model, train_loader, dev_loader):
 if __name__ == '__main__':
     train_loader, dev_loader = load_data()
 
-    if const.CURR_MODEL == 'xception':
-        model = Xception()
+    model = Xception()
 
     if const.RUN_ON_GPU:
         if const.CONTINUE_FROM is not None:
