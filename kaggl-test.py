@@ -6,6 +6,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import pretrainedmodels
+from cnn_finetune import make_model
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image, ImageFile
@@ -14,18 +15,19 @@ from tqdm import tqdm
 if KAGGLE_MODE:
     package_dir = '../input/pretrained-models/pretrained-models/pretrained-models.pytorch-master/'
     sys.path.insert(0, package_dir)
+    package_dir = '../input/cnn-finetune/pytorch-cnn-finetune-master/pytorch-cnn-finetune-master/'
+    sys.path.insert(0, package_dir)
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-INPUT_SHAPE = (224, 224)
-CURR_MODEL = 'mmmodel'
+INPUT_SHAPE = (229, 229)
+CURR_MODEL_WEIGHTS = 'xception/weights_3312.pth'
 DATA_PATH = '../input/aptos2019-blindness-detection/' if KAGGLE_MODE else 'data/'
 TTA = 10
 BATCH_SIZE = 32
 CUTOFFS = np.array([0.5, 1.5, 2.5, 3.5])
 
 class RetinopathyDataset(Dataset):
-    def __init__(self, csv_file, mode='test'):
-        self.mode = mode
+    def __init__(self, csv_file):
         self.data = pd.read_csv(csv_file)
         self.transform = transforms.Compose([
             transforms.Resize(INPUT_SHAPE),
@@ -38,28 +40,24 @@ class RetinopathyDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        folder = 'train_images/' if self.mode == 'train' else 'test_images'
+        folder = 'test_images'
         img_name = os.path.join(DATA_PATH + folder, self.data.loc[idx, 'id_code'] + '.png')
         image = Image.open(img_name)
         image = self.transform(image)
-        if self.mode == 'train':
-            label = self.data.loc[idx, 'diagnosis']
-            return image, label
         return image
 
-class ResNet101():
+class Xception(nn.Module):
     def __init__(self):
-        self.model = pretrainedmodels.__dict__['resnet101'](pretrained=None)
-        self.model.avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.model.last_linear = nn.Sequential(
-            nn.BatchNorm1d(2048),
-            nn.Dropout(p=0.25),
-            nn.Linear(in_features=2048, out_features=2048),
-            nn.ReLU(),
-            nn.BatchNorm1d(2048),
-            nn.Dropout(p=0.5),
-            nn.Linear(in_features=2048, out_features=1),
-        )
+        super().__init__()
+        self.xception = make_model('xception', num_classes=1, pretrained=True, pool=nn.AdaptiveMaxPool2d(1))
+        c = 0
+        for layer in self.xception.parameters():
+            layer.requires_grad = (c >= 85)
+            c += 1
+
+    def forward(self, input): # in = (b, 3, 299, 299)
+        x = self.xception(input)  # out = (b, 1)
+        return x
 
 def truncated(test_preds):
     for i, pred in enumerate(test_preds):
@@ -84,12 +82,12 @@ def rounded(test_preds):
 if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    model = ResNet101().model
+    model = Xception()
     for param in model.parameters():
         param.requires_grad = False
 
     model.eval()
-    model.load_state_dict(torch.load(f'../input/{CURR_MODEL}/model.bin'))
+    model.load_state_dict(torch.load(f'../input/{CURR_MODEL_WEIGHTS}'))
     model.cuda()
 
     test_dataset = RetinopathyDataset(csv_file=DATA_PATH + 'sample_submission.csv')

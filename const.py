@@ -8,7 +8,7 @@ CURR_MODEL = MODELS[0]
 
 DATA_PATH = 'data/'
 if RUN_ON_GPU:
-    BATCH_SIZE = 16
+    BATCH_SIZE = 32
     TRAIN_CSV = DATA_PATH + 'train.csv'
 else:
     BATCH_SIZE = 4
