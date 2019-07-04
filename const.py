@@ -1,5 +1,12 @@
+import numpy as np
+import torch
+torch.manual_seed(0)
+np.random.seed(0)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
 RUN_ON_GPU = False
-RUN_ID = 'xception1'
+RUN_ID = 'baseline'
 # CONTINUE_FROM = f'save/{RUN_ID}/weights_1.pth'
 CONTINUE_FROM = None
 LAST_SAVE = 0
@@ -16,7 +23,7 @@ else:
 
 LEARNING_RATE = 3e-4
 MAX_STEPS_PER_EPOCH = 15000
-NUM_EPOCHS = 100
+NUM_EPOCHS = 1000
 
 INPUT_SHAPE = (229, 229)
 DEV_CSV = DATA_PATH + 'dev.csv'

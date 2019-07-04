@@ -1,7 +1,8 @@
 KAGGLE_MODE = False
-GPU_MODE = True
-RUN_ID = 'xception1/'
-CURR_WEIGHTS = 'weights_552.pth'
+GPU_MODE = False
+RUN_ID = 'xception2/'
+CURR_WEIGHTS = 'weights_1656.pth'
+
 import sys
 if KAGGLE_MODE:
     sys.path.insert(0, '../input/pretrainedmodels/pretrainedmodels/pretrained-models.pytorch-master/')
