@@ -1,8 +1,10 @@
-KAGGLE_MODE = True
+KAGGLE_MODE = False
+import sys
 if KAGGLE_MODE:
+    package_dir = '../input/pretrainedmodels/pretrainedmodels/pretrained-models.pytorch-master/'
+    sys.path.insert(0, package_dir)
     package_dir = '../input/cnnfinetune/pytorch-cnn-finetune-master/pytorch-cnn-finetune-master/'
     sys.path.insert(0, package_dir)
-import sys
 import os
 import numpy as np
 import pandas as pd
@@ -13,10 +15,13 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image, ImageFile
 from tqdm import tqdm
+import pretrainedmodels
+import cnn_finetune
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 INPUT_SHAPE = (229, 229)
-CURR_MODEL_WEIGHTS = 'xception/weights_3312.pth'
+SAVE_PATH = '../input/xception0/' if KAGGLE_MODE else 'save/'
+CURR_MODEL_WEIGHTS = SAVE_PATH + 'weights_552.pth'
 DATA_PATH = '../input/aptos2019-blindness-detection/' if KAGGLE_MODE else 'data/'
 TTA = 10
 BATCH_SIZE = 32
@@ -46,10 +51,6 @@ class Xception(nn.Module):
     def __init__(self):
         super().__init__()
         self.xception = make_model('xception', num_classes=1, pretrained=False, pool=nn.AdaptiveMaxPool2d(1))
-#         c = 0
-#         for layer in self.xception.parameters():
-#             layer.requires_grad = (c >= 85)
-#             c += 1
 
     def forward(self, input): # in = (b, 3, 299, 299)
         x = self.xception(input)  # out = (b, 1)
@@ -83,17 +84,22 @@ if __name__ == '__main__':
         param.requires_grad = False
 
     model.eval()
-    model.load_state_dict(torch.load(f'../input/{CURR_MODEL_WEIGHTS}'))
-    model.cuda()
+
+    if KAGGLE_MODE:
+        weights = torch.load(CURR_MODEL_WEIGHTS)
+        model.load_state_dict(weights, strict=False)
+        model.cuda()
+    else:
+        weights = torch.load(CURR_MODEL_WEIGHTS, map_location=lambda storage, loc: storage)
+        model.load_state_dict(weights, strict=False)
 
     test_dataset = RetinopathyDataset(csv_file=DATA_PATH + 'sample_submission.csv')
     test_data_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=4)
 
     test_preds = np.zeros((TTA, len(test_dataset)))
     for t in range(TTA):
-        for i, data in enumerate(tqdm(test_data_loader)):
-            input = data.to(device)
-            print(input.shape)
+        for i, input in enumerate(tqdm(test_data_loader)):
+            input = input.to(device)
             pred = model(input)
             test_preds[t, i*BATCH_SIZE : (i+1)*BATCH_SIZE] = pred.detach().cpu().squeeze().numpy().ravel().reshape(1, -1)
 

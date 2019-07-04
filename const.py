@@ -1,5 +1,5 @@
-RUN_ON_GPU = False
-RUN_ID = 'baseline'
+RUN_ON_GPU = True
+RUN_ID = 'xception1'
 # CONTINUE_FROM = f'save/{RUN_ID}/weights_1.pth'
 CONTINUE_FROM = None
 LAST_SAVE = 0
@@ -16,7 +16,7 @@ else:
 
 LEARNING_RATE = 3e-4
 MAX_STEPS_PER_EPOCH = 15000
-NUM_EPOCHS = 50
+NUM_EPOCHS = 100
 
 INPUT_SHAPE = (229, 229)
 DEV_CSV = DATA_PATH + 'dev.csv'

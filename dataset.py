@@ -34,8 +34,8 @@ class RetinopathyDataset(Dataset):
 def load_data():
     train_dataset = RetinopathyDataset(const.TRAIN_CSV)
     dev_dataset = RetinopathyDataset(const.DEV_CSV)
-    train_data_loader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4)
-    dev_data_loader = DataLoader(dev_dataset, batch_size=16, shuffle=True, num_workers=4)
+    train_data_loader = DataLoader(train_dataset, batch_size=const.BATCH_SIZE, shuffle=True, num_workers=4)
+    dev_data_loader = DataLoader(dev_dataset, batch_size=const.BATCH_SIZE, shuffle=True, num_workers=4)
     return train_data_loader, dev_data_loader
 
 
