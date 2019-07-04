@@ -2,7 +2,6 @@
 import time
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
@@ -45,8 +44,6 @@ def train(model, train_loader, dev_loader):
             for i, (input, targ) in enumerate(tqdm(dataloader)):
                 if i >= num_steps:
                     break
-                visualize(input, targ)
-                break
 
                 input = input.to(device)
                 target = targ.float().to(device)
@@ -70,17 +67,8 @@ def train(model, train_loader, dev_loader):
                         torch.save(model.state_dict(), f'save/{const.RUN_ID}/weights_{iter}.pth')
     print(end_time - start_time)
 
-def visualize(input, target):
-    fig = plt.figure(figsize=(25, 16))
-    for i in range(input.shape[0]):
-        ax = fig.add_subplot(2, 2, i+1)
-        plt.imshow(input[i].permute(1, 2, 0))
-        ax.set_title(int(target[i]))
-    plt.show()
-
 if __name__ == '__main__':
     train_loader, dev_loader = load_data()
-
     model = Xception()
 
     if const.RUN_ON_GPU:

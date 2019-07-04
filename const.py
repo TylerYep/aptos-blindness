@@ -5,8 +5,8 @@ np.random.seed(0)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
-RUN_ON_GPU = False
-RUN_ID = 'baseline'
+RUN_ON_GPU = True
+RUN_ID = 'xception4'
 # CONTINUE_FROM = f'save/{RUN_ID}/weights_1.pth'
 CONTINUE_FROM = None
 LAST_SAVE = 0

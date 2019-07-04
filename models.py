@@ -1,12 +1,13 @@
 import sys
-sys.path.insert(0, 'assets/pretrained-models.pytorch-master/pretrainedmodels')
-sys.path.insert(0, 'assets/pytorch-cnn-finetune-master/cnn_finetune')
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from cnn_finetune import make_model
 import pretrainedmodels
 import const
+if const.RUN_ON_GPU:
+    sys.path.insert(0, '/home/zephyrnx_gmail_com/aptos-blindness/assets/pretrained-models.pytorch-master')
+    sys.path.insert(0, '/home/zephyrnx_gmail_com/aptos-blindness/assets/pytorch-cnn-finetune-master')
 
 class Xception(nn.Module):
     def __init__(self):

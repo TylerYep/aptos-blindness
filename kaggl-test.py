@@ -7,9 +7,9 @@ import sys
 if KAGGLE_MODE:
     sys.path.insert(0, '../input/pretrainedmodels/pretrainedmodels/pretrained-models.pytorch-master/')
     sys.path.insert(0, '../input/cnnfinetune/pytorch-cnn-finetune-master/pytorch-cnn-finetune-master/')
-else:
-    sys.path.insert(0, 'assets/pretrained-models.pytorch-master/')
-    sys.path.insert(0, 'assets/pytorch-cnn-finetune-master/')
+elif GPU_MODE:
+    sys.path.insert(0, '/home/zephyrnx_gmail_com/aptos-blindness/assets/pretrained-models.pytorch-master')
+    sys.path.insert(0, '/home/zephyrnx_gmail_com/aptos-blindness/assets/pytorch-cnn-finetune-master')
 import os
 import numpy as np
 import pandas as pd
