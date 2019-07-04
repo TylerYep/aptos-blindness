@@ -1,22 +1,18 @@
-KAGGLE_MODE = False
+KAGGLE_MODE = True
+if KAGGLE_MODE:
+    package_dir = '../input/cnnfinetune/pytorch-cnn-finetune-master/pytorch-cnn-finetune-master/'
+    sys.path.insert(0, package_dir)
 import sys
 import os
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-import pretrainedmodels
 from cnn_finetune import make_model
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image, ImageFile
 from tqdm import tqdm
-
-if KAGGLE_MODE:
-    package_dir = '../input/pretrained-models/pretrained-models/pretrained-models.pytorch-master/'
-    sys.path.insert(0, package_dir)
-    package_dir = '../input/cnn-finetune/pytorch-cnn-finetune-master/pytorch-cnn-finetune-master/'
-    sys.path.insert(0, package_dir)
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 INPUT_SHAPE = (229, 229)
@@ -49,11 +45,11 @@ class RetinopathyDataset(Dataset):
 class Xception(nn.Module):
     def __init__(self):
         super().__init__()
-        self.xception = make_model('xception', num_classes=1, pretrained=True, pool=nn.AdaptiveMaxPool2d(1))
-        c = 0
-        for layer in self.xception.parameters():
-            layer.requires_grad = (c >= 85)
-            c += 1
+        self.xception = make_model('xception', num_classes=1, pretrained=False, pool=nn.AdaptiveMaxPool2d(1))
+#         c = 0
+#         for layer in self.xception.parameters():
+#             layer.requires_grad = (c >= 85)
+#             c += 1
 
     def forward(self, input): # in = (b, 3, 299, 299)
         x = self.xception(input)  # out = (b, 1)
@@ -61,17 +57,17 @@ class Xception(nn.Module):
 
 def truncated(test_preds):
     for i, pred in enumerate(test_preds):
-    if pred < CUTOFFS[0]:
-        test_preds[i] = 0
-    elif pred >= CUTOFFS[0] and pred < CUTOFFS[1]:
-        test_preds[i] = 1
-    elif pred >= CUTOFFS[1] and pred < CUTOFFS[2]:
-        test_preds[i] = 2
-    elif pred >= CUTOFFS[2] and pred < CUTOFFS[3]:
-        test_preds[i] = 3
-    else:
-        test_preds[i] = 4
-    return test_preds
+        if pred < CUTOFFS[0]:
+            test_preds[i] = 0
+        elif pred >= CUTOFFS[0] and pred < CUTOFFS[1]:
+            test_preds[i] = 1
+        elif pred >= CUTOFFS[1] and pred < CUTOFFS[2]:
+            test_preds[i] = 2
+        elif pred >= CUTOFFS[2] and pred < CUTOFFS[3]:
+            test_preds[i] = 3
+        else:
+            test_preds[i] = 4
+        return test_preds
 
 def rounded(test_preds):
     x = np.subtract.outer(test_preds, CUTOFFS)
@@ -96,7 +92,9 @@ if __name__ == '__main__':
     test_preds = np.zeros((TTA, len(test_dataset)))
     for t in range(TTA):
         for i, data in enumerate(tqdm(test_data_loader)):
-            pred = model(data.to(device))
+            input = data.to(device)
+            print(input.shape)
+            pred = model(input)
             test_preds[t, i*BATCH_SIZE : (i+1)*BATCH_SIZE] = pred.detach().cpu().squeeze().numpy().ravel().reshape(1, -1)
 
     test_preds = test_preds.sum(axis=0) / float(TTA)

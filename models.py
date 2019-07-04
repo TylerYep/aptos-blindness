@@ -8,11 +8,9 @@ import const
 class Xception(nn.Module):
     def __init__(self):
         super().__init__()
-        self.xception = make_model('xception', num_classes=1, pretrained=True, pool=nn.AdaptiveMaxPool2d(1))
-        c = 0
+        self.xception = make_model('xception', num_classes=1, pretrained=False, pool=nn.AdaptiveMaxPool2d(1))
         for layer in self.xception.parameters():
-            layer.requires_grad = (c >= 85)
-            c += 1
+            layer.requires_grad = True
 
     def forward(self, input): # in = (b, 3, 299, 299)
         x = self.xception(input)  # out = (b, 1)
