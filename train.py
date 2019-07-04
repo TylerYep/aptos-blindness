@@ -3,7 +3,6 @@ import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import cv2
 
 import torch
 import torch.nn as nn
@@ -11,7 +10,6 @@ import torch.optim as optim
 import torchvision
 
 from tensorboardX import SummaryWriter
-from cnn_finetune import make_model
 from tqdm import tqdm
 
 import const
