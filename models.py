@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, 'assets/pretrained-models.pytorch-master/')
+sys.path.insert(0, 'assets/pytorch-cnn-finetune-master/')
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

@@ -1,4 +1,4 @@
-RUN_ON_GPU = True
+RUN_ON_GPU = False
 RUN_ID = 'xception1'
 # CONTINUE_FROM = f'save/{RUN_ID}/weights_1.pth'
 CONTINUE_FROM = None
