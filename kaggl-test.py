@@ -1,10 +1,14 @@
 KAGGLE_MODE = False
+GPU_MODE = True
+RUN_ID = 'xception1/'
+CURR_WEIGHTS = 'weights_552.pth'
 import sys
 if KAGGLE_MODE:
-    package_dir = '../input/pretrainedmodels/pretrainedmodels/pretrained-models.pytorch-master/'
-    sys.path.insert(0, package_dir)
-    package_dir = '../input/cnnfinetune/pytorch-cnn-finetune-master/pytorch-cnn-finetune-master/'
-    sys.path.insert(0, package_dir)
+    sys.path.insert(0, '../input/pretrainedmodels/pretrainedmodels/pretrained-models.pytorch-master/')
+    sys.path.insert(0, '../input/cnnfinetune/pytorch-cnn-finetune-master/pytorch-cnn-finetune-master/')
+else:
+    sys.path.insert(0, 'assets/pretrained-models.pytorch-master/')
+    sys.path.insert(0, 'assets/pytorch-cnn-finetune-master/')
 import os
 import numpy as np
 import pandas as pd
@@ -20,8 +24,9 @@ import cnn_finetune
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 INPUT_SHAPE = (229, 229)
-SAVE_PATH = '../input/xception0/' if KAGGLE_MODE else 'save/'
-CURR_MODEL_WEIGHTS = SAVE_PATH + 'weights_552.pth'
+SAVE_PATH = '../input/' if KAGGLE_MODE else 'save/'
+if KAGGLE_MODE or GPU_MODE: SAVE_PATH += RUN_ID
+CURR_MODEL_WEIGHTS = SAVE_PATH + CURR_WEIGHTS
 DATA_PATH = '../input/aptos2019-blindness-detection/' if KAGGLE_MODE else 'data/'
 TTA = 10
 BATCH_SIZE = 32
@@ -85,7 +90,7 @@ if __name__ == '__main__':
 
     model.eval()
 
-    if KAGGLE_MODE:
+    if KAGGLE_MODE or GPU_MODE:
         weights = torch.load(CURR_MODEL_WEIGHTS)
         model.load_state_dict(weights, strict=False)
         model.cuda()
