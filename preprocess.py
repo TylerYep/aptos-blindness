@@ -5,6 +5,7 @@ from dataset import load_data
 import cv2
 import glob
 import numpy as np
+from tqdm import tqdm
 
 def main():
     train_loader, dev_loader = load_data()
@@ -20,15 +21,15 @@ def visualize(input, target):
         ax.set_title(int(target[i]))
     plt.show()
 
-def scaleRadius(img, scale):
-    x = img[img.shape[0]//2, :, :].sum(axis=1)
-    r = (x > x.mean() / 10).sum() / 2
-    s = scale * 1.0 / r
-    return cv2.resize(img, (0,0), fx=s, fy=s)
-
 def preprocess(mode='train'):
+    def scaleRadius(img, scale):
+        x = img[img.shape[0]//2, :, :].sum(axis=1)
+        r = (x > x.mean() / 10).sum() / 2
+        s = scale * 1.0 / r
+        return cv2.resize(img, (0,0), fx=s, fy=s)
+
     scale = 300
-    for f in glob.glob(f'data/{mode}_images/*.png'):
+    for f in tqdm(glob.glob(f'data/{mode}_images/*.png')):
         orig = cv2.imread(f)
         # Scale image to a given radius.
         a = scaleRadius(orig, scale)
@@ -40,8 +41,9 @@ def preprocess(mode='train'):
         a = a*b + 128*(1-b)
         filename = f[f.rfind('/')+1:]
         cv2.imwrite(f'data/preprocessed_{mode}/{filename}', a)
-        break
 
 if __name__ == '__main__':
-    preprocess()
+    main()
+    # preprocess('train')
+    # preprocess('test')
 
