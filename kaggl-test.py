@@ -4,27 +4,28 @@ RUN_ID = 'xception2/'
 CURR_WEIGHTS = 'weights_1656.pth'
 
 import sys
+import os
+import numpy as np
+import pandas as pd
+import torch
+import torch.nn as nn
+from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms
+from PIL import Image, ImageFile
+from tqdm import tqdm
+
 if KAGGLE_MODE:
     sys.path.insert(0, '../input/pretrainedmodels/pretrainedmodels/pretrained-models.pytorch-master/')
     sys.path.insert(0, '../input/cnnfinetune/pytorch-cnn-finetune-master/pytorch-cnn-finetune-master/')
 elif GPU_MODE:
     sys.path.insert(0, '/home/zephyrnx_gmail_com/aptos-blindness/assets/pretrained-models.pytorch-master')
     sys.path.insert(0, '/home/zephyrnx_gmail_com/aptos-blindness/assets/pytorch-cnn-finetune-master')
-import os
-import numpy as np
-import pandas as pd
-import torch
-import torch.nn as nn
-from cnn_finetune import make_model
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
-from PIL import Image, ImageFile
-from tqdm import tqdm
+
 import pretrainedmodels
-import cnn_finetune
+from cnn_finetune import make_model
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-INPUT_SHAPE = (229, 229)
+INPUT_SHAPE = (299, 299)
 SAVE_PATH = '../input/' if KAGGLE_MODE else 'save/'
 if KAGGLE_MODE or GPU_MODE: SAVE_PATH += RUN_ID
 CURR_MODEL_WEIGHTS = SAVE_PATH + CURR_WEIGHTS
@@ -82,36 +83,37 @@ def rounded(test_preds):
     test_preds = CUTOFFS[y]
     return test_preds
 
+def test():
+    with torch.no_grad():
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        model = Xception()
+        model.eval()
+
+        if KAGGLE_MODE or GPU_MODE:
+            weights = torch.load(CURR_MODEL_WEIGHTS)
+            model.load_state_dict(weights, strict=False)
+            model.cuda()
+        else:
+            weights = torch.load(CURR_MODEL_WEIGHTS, map_location=lambda storage, loc: storage)
+            model.load_state_dict(weights, strict=False)
+
+        test_dataset = RetinopathyDataset(csv_file=DATA_PATH + 'sample_submission.csv')
+        test_data_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=4)
+
+        test_preds = np.zeros((TTA, len(test_dataset)))
+        for t in range(TTA):
+            for i, input in enumerate(tqdm(test_data_loader)):
+                input = input.to(device)
+                pred = model(input)
+                test_preds[t, i*BATCH_SIZE : (i+1)*BATCH_SIZE] = pred.detach().cpu().squeeze().numpy().ravel().reshape(1, -1)
+
+        test_preds = test_preds.sum(axis=0) / float(TTA)
+        test_preds = truncated(test_preds)
+
+        sample = pd.read_csv(DATA_PATH + 'sample_submission.csv')
+        sample.diagnosis = test_preds.astype(int)
+        sample.to_csv('submission.csv', index=False)
+
 if __name__ == '__main__':
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    model = Xception()
-    for param in model.parameters():
-        param.requires_grad = False
-
-    model.eval()
-
-    if KAGGLE_MODE or GPU_MODE:
-        weights = torch.load(CURR_MODEL_WEIGHTS)
-        model.load_state_dict(weights, strict=False)
-        model.cuda()
-    else:
-        weights = torch.load(CURR_MODEL_WEIGHTS, map_location=lambda storage, loc: storage)
-        model.load_state_dict(weights, strict=False)
-
-    test_dataset = RetinopathyDataset(csv_file=DATA_PATH + 'sample_submission.csv')
-    test_data_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=4)
-
-    test_preds = np.zeros((TTA, len(test_dataset)))
-    for t in range(TTA):
-        for i, input in enumerate(tqdm(test_data_loader)):
-            input = input.to(device)
-            pred = model(input)
-            test_preds[t, i*BATCH_SIZE : (i+1)*BATCH_SIZE] = pred.detach().cpu().squeeze().numpy().ravel().reshape(1, -1)
-
-    test_preds = test_preds.sum(axis=0) / float(TTA)
-    test_preds = truncated(test_preds)
-
-    sample = pd.read_csv(DATA_PATH + 'sample_submission.csv')
-    sample.diagnosis = test_preds.astype(int)
-    sample.to_csv('submission.csv', index=False)
+    test()

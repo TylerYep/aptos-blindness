@@ -5,10 +5,9 @@ np.random.seed(0)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
-RUN_ON_GPU = True
+RUN_ON_GPU = False
 RUN_ID = 'xception4'
-# CONTINUE_FROM = f'save/{RUN_ID}/weights_1.pth'
-CONTINUE_FROM = None
+CONTINUE_FROM = None # f'save/{RUN_ID}/weights_1.pth'
 LAST_SAVE = 0
 MODELS = ('xception',)
 CURR_MODEL = MODELS[0]
@@ -25,6 +24,6 @@ LEARNING_RATE = 3e-4
 MAX_STEPS_PER_EPOCH = 15000
 NUM_EPOCHS = 1000
 
-INPUT_SHAPE = (229, 229)
+INPUT_SHAPE = (299, 299)
 DEV_CSV = DATA_PATH + 'dev.csv'
 TEST_CSV = DATA_PATH + 'test.csv'

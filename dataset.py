@@ -14,7 +14,7 @@ class RetinopathyDataset(Dataset):
             transforms.Resize(const.INPUT_SHAPE),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            # transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
 
     def __len__(self):
@@ -35,12 +35,10 @@ def load_data():
     train_dataset = RetinopathyDataset(const.TRAIN_CSV)
     dev_dataset = RetinopathyDataset(const.DEV_CSV)
     train_data_loader = DataLoader(train_dataset, batch_size=const.BATCH_SIZE, shuffle=True, num_workers=4)
-    dev_data_loader = DataLoader(dev_dataset, batch_size=const.BATCH_SIZE, shuffle=True, num_workers=4)
+    dev_data_loader = DataLoader(dev_dataset, batch_size=const.BATCH_SIZE, shuffle=False, num_workers=4)
     return train_data_loader, dev_data_loader
-
 
 
 if __name__ == '__main__':
     train_dataset = RetinopathyDataset(const.TRAIN_CSV)
-    # test_dataset = RetinopathyDataset(const.DATA_PATH + 'sample_submission.csv', 'test')
-    print(train_dataset[5])
+    print(train_dataset)

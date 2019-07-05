@@ -2,7 +2,7 @@
 data/*
 !data/sample_submission.csv
 *.pth
-save/baseline
+save/events*
 
 ####################
 
