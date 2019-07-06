@@ -21,7 +21,8 @@ class RetinopathyDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        folder = 'train_images/' if self.mode == 'train' else 'test_images'
+        # folder = 'train_images/' if self.mode == 'train' else 'test_images'
+        folder = 'preprocessed_train/' if self.mode == 'train' else 'preprocessed_test'
         img_name = os.path.join(const.DATA_PATH + folder, self.data.loc[idx, 'id_code'] + '.png')
         image = Image.open(img_name)
         image = self.transform(image)

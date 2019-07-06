@@ -1,25 +1,8 @@
 #!/usr/bin/env python
-import matplotlib.pyplot as plt
-import const
-from dataset import load_data
 import cv2
 import glob
 import numpy as np
 from tqdm import tqdm
-
-def main():
-    train_loader, dev_loader = load_data()
-    for i, (input, targ) in enumerate(train_loader):
-        target = targ.float()
-        visualize(input, target)
-
-def visualize(input, target):
-    fig = plt.figure(figsize=(25, 16))
-    for i in range(input.shape[0]):
-        ax = fig.add_subplot(2, 2, i+1)
-        plt.imshow(input[i].permute(1, 2, 0))
-        ax.set_title(int(target[i]))
-    plt.show()
 
 def preprocess(mode='train'):
     def scaleRadius(img, scale):
@@ -43,7 +26,6 @@ def preprocess(mode='train'):
         cv2.imwrite(f'data/preprocessed_{mode}/{filename}', a)
 
 if __name__ == '__main__':
-    main()
-    # preprocess('train')
-    # preprocess('test')
+    preprocess('train')
+    preprocess('test')
 

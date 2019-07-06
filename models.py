@@ -11,16 +11,40 @@ if const.RUN_ON_GPU:
 import pretrainedmodels
 from cnn_finetune import make_model
 
+def compute_size(in_size, kernel_size, stride=1, padding=0):
+    return (in_size - kernel_size + 2*padding) // stride + 1
+
+class SimpleCNN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels=5, kernel_size=3, stride=2, padding=1)
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+        self.fc1 = nn.Linear(84000, 64)
+        self.fc2 = nn.Linear(64, 1)
+
+    def forward(self, x):
+        b = x.shape[0] # (b, 3, 600, 450)
+        x = F.relu(self.conv1(x)) # (b, 5, 300, 225)
+        x = self.pool(x) # (b, 5, 300, 225)
+        x = x.view(b, -1) # (b, 84000)
+        x = F.relu(self.fc1(x)) # (b, 84000) to (b, 64)
+        x = self.fc2(x) # (b, 1)
+        return x.squeeze()
+
 class Xception(nn.Module):
     def __init__(self):
         super().__init__()
-        self.xception = make_model('xception', num_classes=1, pretrained=False, pool=nn.AdaptiveMaxPool2d(1))
+        self.xception = make_model('xception',
+                                   num_classes=1,
+                                   pretrained=True,
+                                   pool=nn.AdaptiveMaxPool2d(1),
+                                   input_size=const.INPUT_SHAPE)
         for layer in self.xception.parameters():
             layer.requires_grad = True
 
-    def forward(self, input): # in = (b, 3, 299, 299)
-        x = self.xception(input)  # out = (b, 1)
-        return x
+    def forward(self, input):
+        x = self.xception(input)
+        return x.squeeze()
 
 class ResNet101():
     def __init__(self):
