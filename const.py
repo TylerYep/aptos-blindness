@@ -19,15 +19,15 @@ CURR_MODEL = MODELS[0]
 DATA_PATH = 'gdrive/My Drive/Colab Notebooks/' if RUN_ON_COLAB else 'data/'
 if RUN_ON_GPU:
     BATCH_SIZE = 32
-    TRAIN_CSV = DATA_PATH + 'train.csv'
+    TRAIN_CSV = 'data/train.csv'
 else:
     BATCH_SIZE = 8
-    TRAIN_CSV = DATA_PATH + 'train-small.csv'
+    TRAIN_CSV = 'data/train-small.csv'
 
 LEARNING_RATE = 3e-4
 MAX_STEPS_PER_EPOCH = 15000
 NUM_EPOCHS = 1000
 
 INPUT_SHAPE = (600, 450)
-DEV_CSV = DATA_PATH + 'dev.csv'
-TEST_CSV = DATA_PATH + 'test.csv'
+DEV_CSV = 'data/dev.csv'
+TEST_CSV = 'data/test.csv'
