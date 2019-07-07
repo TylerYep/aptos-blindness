@@ -18,7 +18,7 @@ CURR_MODEL = MODELS[0]
 
 DATA_PATH = '../gdrive/My Drive/Colab Notebooks/' if RUN_ON_COLAB else 'data/'
 if RUN_ON_GPU:
-    BATCH_SIZE = 32
+    BATCH_SIZE = 16
     TRAIN_CSV = 'data/train.csv'
 else:
     BATCH_SIZE = 8
