@@ -50,7 +50,7 @@ def train(model, train_loader, dev_loader):
                     losses.update(loss.data.item(), input.size(0))
 
                     if phase == 'train':
-                        print(output.detach().cpu().numpy(), target.cpu().numpy(), loss.detach().cpu().numpy())
+                        # print(output.detach().cpu().numpy(), target.cpu().numpy(), loss.detach().cpu().numpy())
                         optimizer.zero_grad()
                         loss.backward()
                         optimizer.step()
