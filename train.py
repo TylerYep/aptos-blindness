@@ -28,7 +28,7 @@ def train(model, train_loader, dev_loader):
         print('-' * 50)
         print(f'Epoch {e}')
         losses = AverageMeter()
-        for phase in ('train', ):
+        for phase in ('train', 'val'):
             with torch.set_grad_enabled(phase == 'train'):
                 if phase == 'train':
                     model.train()
@@ -48,10 +48,9 @@ def train(model, train_loader, dev_loader):
                     output = model(input)
                     loss = criterion(output, target)
                     losses.update(loss.data.item(), input.size(0))
-                    if phase == 'train':
-                        print(output.detach().numpy(), target.numpy(), loss.detach().numpy())
 
                     if phase == 'train':
+                        print(output.detach().cpu().numpy(), target.cpu().numpy(), loss.detach().cpu().numpy())
                         optimizer.zero_grad()
                         loss.backward()
                         optimizer.step()
