@@ -3,11 +3,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-FILE_PATH = '/content'
 import const
 if const.RUN_ON_GPU:
-    sys.path.insert(0, FILE_PATH + '/aptos-blindness/assets/pretrained-models.pytorch-master')
-    sys.path.insert(0, FILE_PATH + '/aptos-blindness/assets/pytorch-cnn-finetune-master')
+    sys.path.insert(0, const.GIT_PATH + '/aptos-blindness/assets/pretrained-models.pytorch-master')
+    sys.path.insert(0, const.GIT_PATH + '/aptos-blindness/assets/pytorch-cnn-finetune-master')
 
 import pretrainedmodels
 from cnn_finetune import make_model
