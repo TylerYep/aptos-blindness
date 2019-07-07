@@ -34,7 +34,7 @@ class SimpleCNN(nn.Module):
 class Xception(nn.Module):
     def __init__(self):
         super().__init__()
-        self.xception = make_model('xception',
+        self.xception = make_model('resnet101',
                                    num_classes=1,
                                    pretrained=True,
                                    pool=nn.AdaptiveMaxPool2d(1),
