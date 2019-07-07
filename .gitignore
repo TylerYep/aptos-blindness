@@ -3,6 +3,7 @@ data/*
 !data/sample_submission.csv
 *.pth
 save/events*
+!data/*.csv
 
 ####################
 

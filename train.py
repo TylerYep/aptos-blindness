@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
-from tensorboardX import SummaryWriter
 from tqdm import tqdm
 
 import const
@@ -14,12 +13,16 @@ from util import AverageMeter
 from kappa import quadratic_weighted_kappa
 from models import Xception, ResNet101, SimpleCNN
 
+if const.USE_LOGGER:
+    from tensorboardX import SummaryWriter
+
 def train(model, train_loader, dev_loader):
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=const.LEARNING_RATE)
-    if const.RUN_ON_GPU: tbx = SummaryWriter(f'save/{const.RUN_ID}/')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.5)
+    if const.USE_LOGGER:
+        tbx = SummaryWriter(f'save/{const.RUN_ID}/')
 
     for e in range(const.NUM_EPOCHS):
         print('-' * 50)
@@ -53,7 +56,7 @@ def train(model, train_loader, dev_loader):
                         loss.backward()
                         optimizer.step()
 
-                    if i % 100 == 0 and const.RUN_ON_GPU:
+                    if i % 100 == 0 and const.USE_LOGGER:
                         iter = int(epoch*num_steps+i)
                         quadratic_kappa = quadratic_weighted_kappa(targ, output.detach().cpu().int().numpy())
                         tbx.add_scalar(phase + '/loss', losses.val, iter)

@@ -6,6 +6,7 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 RUN_ON_GPU = True
+USE_LOGGER = False
 RUN_ID = 'xception5'
 CONTINUE_FROM = None # f'save/{RUN_ID}/weights_1.pth'
 LAST_SAVE = 0
