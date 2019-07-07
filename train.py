@@ -13,7 +13,6 @@ from dataset import load_data
 from util import AverageMeter
 from kappa import quadratic_weighted_kappa
 from models import Xception, ResNet101, SimpleCNN
-from preprocess import visualize
 
 def train(model, train_loader, dev_loader):
     criterion = nn.MSELoss()
@@ -46,7 +45,8 @@ def train(model, train_loader, dev_loader):
                     output = model(input)
                     loss = criterion(output, target)
                     losses.update(loss.data.item(), input.size(0))
-                    print(output.detach().numpy(), target.numpy(), loss.detach().numpy())
+                    if phase == 'train':
+                        print(output.detach().numpy(), target.numpy(), loss.detach().numpy())
 
                     if phase == 'train':
                         optimizer.zero_grad()

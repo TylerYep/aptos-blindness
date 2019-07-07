@@ -11,9 +11,6 @@ if const.RUN_ON_GPU:
 import pretrainedmodels
 from cnn_finetune import make_model
 
-def compute_size(in_size, kernel_size, stride=1, padding=0):
-    return (in_size - kernel_size + 2*padding) // stride + 1
-
 class SimpleCNN(nn.Module):
     def __init__(self):
         super().__init__()
@@ -31,10 +28,13 @@ class SimpleCNN(nn.Module):
         x = self.fc2(x) # (b, 1)
         return x.squeeze()
 
+    def compute_size(in_size, kernel_size, stride=1, padding=0):
+        return (in_size - kernel_size + 2*padding) // stride + 1
+
 class Xception(nn.Module):
     def __init__(self):
         super().__init__()
-        self.xception = make_model('xception',
+        self.xception = make_model('resnet34',
                                    num_classes=1,
                                    pretrained=True,
                                    pool=nn.AdaptiveMaxPool2d(1),

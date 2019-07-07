@@ -17,8 +17,8 @@ if RUN_ON_GPU:
     BATCH_SIZE = 32
     TRAIN_CSV = DATA_PATH + 'train.csv'
 else:
-    BATCH_SIZE = 5
-    TRAIN_CSV = DATA_PATH + 'train-tiny.csv'
+    BATCH_SIZE = 8
+    TRAIN_CSV = DATA_PATH + 'train-small.csv'
 
 LEARNING_RATE = 3e-4
 MAX_STEPS_PER_EPOCH = 15000
