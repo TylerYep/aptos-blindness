@@ -58,13 +58,13 @@ def train(model, train_loader, dev_loader):
 
                     if i % 100 == 0:
                         if const.USE_LOGGER:
-                            quadratic_kappa = quadratic_weighted_kappa(targ, output.detach().cpu().int().numpy())
+                            quadratic_kappa = quadratic_weighted_kappa(target.cpu().numpy(), output.detach().cpu().int().numpy())
                             iter = int(epoch*num_steps+i)
                             tbx.add_scalar(phase + '/loss', losses.val, iter)
                             tbx.add_scalar(phase + '/kappa', quadratic_kappa, iter)
 
                         if i % 5000 == 0 and phase == 'train':
-                            quadratic_kappa = quadratic_weighted_kappa(target, output.detach().cpu().int().numpy())
+                            quadratic_kappa = quadratic_weighted_kappa(target.cpu().numpy(), output.detach().cpu().int().numpy())
                             print(f'{epoch} [{i}/{num_steps}]\t'
                                   f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
                                   f'kappa {quadratic_kappa:.4f}')
