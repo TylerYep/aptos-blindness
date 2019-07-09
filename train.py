@@ -68,7 +68,7 @@ def train(model, train_loader, dev_loader):
                             print(f'{epoch} [{i}/{num_steps}]\t'
                                   f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
                                   f'kappa {quadratic_kappa:.4f}')
-                            torch.save(model.state_dict(), f'save/{const.RUN_ID}/weights_{iter}.pth')
+                            torch.save(model.state_dict(), f'save/{const.RUN_ID}weights_{iter}.pth')
         # lr_scheduler.step()
 
 if __name__ == '__main__':
