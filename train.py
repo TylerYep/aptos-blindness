@@ -14,7 +14,7 @@ from util import AverageMeter
 from kappa import quadratic_weighted_kappa
 
 if const.RUN_ON_GPU:
-    sys.path.append(const.GIT_PATH + '/aptos-blindness/assets/EfficientNet-PyTorch')
+    sys.path.append('/content/aptos-blindness/assets')
 
 from efficientnet_pytorch import EfficientNet
 
