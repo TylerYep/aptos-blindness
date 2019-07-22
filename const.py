@@ -9,12 +9,12 @@ RUN_ON_GPU = True
 RUN_ON_COLAB = True
 GIT_PATH = '/content' if RUN_ON_COLAB else '' # TODO
 
-USE_LOGGER = True
+USE_LOGGER = False
 RUN_ID = ''
 CONTINUE_FROM = None # f'save/{RUN_ID}/weights_1.pth'
 LAST_SAVE = 0
-MODELS = ('xception',)
-CURR_MODEL = MODELS[0]
+# MODELS = ('xception',)
+# CURR_MODEL = MODELS[0]
 
 DATA_PATH = '../gdrive/My Drive/Colab Notebooks/' if RUN_ON_COLAB else 'data/'
 if RUN_ON_GPU:

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sys
 import numpy as np
 import pandas as pd
 import torch
@@ -11,7 +12,11 @@ import const
 from dataset import load_data
 from util import AverageMeter
 from kappa import quadratic_weighted_kappa
-from models import Xception, ResNet101, SimpleCNN
+
+if const.RUN_ON_GPU:
+    sys.path.append(const.GIT_PATH + '/aptos-blindness/assets/EfficientNet-PyTorch')
+
+from efficientnet_pytorch import EfficientNet
 
 if const.USE_LOGGER:
     from tensorboardX import SummaryWriter
@@ -45,7 +50,7 @@ def train(model, train_loader, dev_loader):
                         break
                     input = input.to(device)
                     target = target.float().to(device)
-                    output = model(input)
+                    output = model(input).squeeze()
                     loss = criterion(output, target)
                     losses.update(loss.data.item(), input.size(0))
 
@@ -55,7 +60,6 @@ def train(model, train_loader, dev_loader):
                         loss.backward()
                         optimizer.step()
 
-
                     if i % 100 == 0:
                         iter = int(epoch*num_steps+i)
                         if const.USE_LOGGER:
@@ -64,7 +68,8 @@ def train(model, train_loader, dev_loader):
                             tbx.add_scalar(phase + '/kappa', quadratic_kappa, iter)
 
                         if i % 5000 == 0 and phase == 'train':
-                            quadratic_kappa = quadratic_weighted_kappa(target.cpu().numpy(), output.detach().cpu().int().numpy())
+                            quadratic_kappa = quadratic_weighted_kappa(target.cpu().numpy(), \
+                                                                       output.detach().cpu().int().numpy())
                             print(f'{epoch} [{i}/{num_steps}]\t'
                                   f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
                                   f'kappa {quadratic_kappa:.4f}')
@@ -73,12 +78,11 @@ def train(model, train_loader, dev_loader):
                     print(f'DEV loss {losses.val:.4f} ({losses.avg:.4f})\t kappa {quadratic_kappa:.4f}')
         # lr_scheduler.step()
 
-def print_curr(epoch, i, num_steps, losses, quadratic_kappa):
-
-
 if __name__ == '__main__':
     train_loader, dev_loader = load_data()
-    model = Xception()
+    model = EfficientNet.from_pretrained('efficientnet-b0')
+    in_features = model._fc.in_features
+    model._fc = nn.Linear(in_features, 1)
 
     if const.RUN_ON_GPU:
         if const.CONTINUE_FROM is not None:
