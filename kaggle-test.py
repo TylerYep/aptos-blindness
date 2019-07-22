@@ -1,10 +1,11 @@
-KAGGLE_MODE = False
+KAGGLE_MODE = True
 GPU_MODE = False
-RUN_ID = 'xception2/'
-CURR_WEIGHTS = 'weights_1656.pth'
+RUN_ID = 'xceptioncolab/'
+CURR_WEIGHTS = 'weights_4655.pth'
 
 import sys
 import os
+import cv2
 import numpy as np
 import pandas as pd
 import torch
@@ -25,7 +26,7 @@ import pretrainedmodels
 from cnn_finetune import make_model
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-INPUT_SHAPE = (299, 299)
+INPUT_SHAPE = (600, 450)
 SAVE_PATH = '../input/' if KAGGLE_MODE else 'save/'
 if KAGGLE_MODE or GPU_MODE: SAVE_PATH += RUN_ID
 CURR_MODEL_WEIGHTS = SAVE_PATH + CURR_WEIGHTS
@@ -37,21 +38,44 @@ CUTOFFS = np.array([0.5, 1.5, 2.5, 3.5])
 class RetinopathyDataset(Dataset):
     def __init__(self, csv_file):
         self.data = pd.read_csv(csv_file)
+        self.preprocess()
         self.transform = transforms.Compose([
             transforms.Resize(INPUT_SHAPE),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            # transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
-        folder = 'test_images'
-        img_name = os.path.join(DATA_PATH + folder, self.data.loc[idx, 'id_code'] + '.png')
+        img_name = os.path.join(DATA_PATH + 'test_images', self.data.loc[idx, 'id_code'] + '.png')
         image = Image.open(img_name)
         image = self.transform(image)
+        return image
+
+    def __getitem__(self, idx):
+        def scaleRadius(img, scale):
+            x = img[img.shape[0]//2, :, :].sum(axis=1)
+            r = (x > x.mean() / 10).sum() / 2
+            s = scale * 1.0 / r
+            return cv2.resize(img, (0,0), fx=s, fy=s)
+        scale = 300
+        img_name = os.path.join(DATA_PATH + 'test_images', self.data.loc[idx, 'id_code'] + '.png')
+        orig = cv2.imread(img_name)
+        # Scale image to a given radius.
+        a = scaleRadius(orig, scale)
+        # Subtract local mean color.
+        a = cv2.addWeighted(a, 4, cv2.GaussianBlur(a, (0,0), scale/30), -4, 128)
+        # Remove outer 10%.
+        b = np.zeros(a.shape)
+        cv2.circle(b, (a.shape[1]//2, a.shape[0]//2), int(scale*0.9), (1, 1, 1), -1, 8, 0)
+        img = a*b + 128*(1-b)
+        img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
+        img = Image.fromarray(img.astype('uint8'), 'RGB')
+        img = Image.open(img_name)
+        image = self.transform(img)
         return image
 
 class Xception(nn.Module):

@@ -69,7 +69,12 @@ def train(model, train_loader, dev_loader):
                                   f'loss {losses.val:.4f} ({losses.avg:.4f})\t'
                                   f'kappa {quadratic_kappa:.4f}')
                             torch.save(model.state_dict(), f'save/{const.RUN_ID}weights_{iter}.pth')
+                if phase == 'val':
+                    print(f'DEV loss {losses.val:.4f} ({losses.avg:.4f})\t kappa {quadratic_kappa:.4f}')
         # lr_scheduler.step()
+
+def print_curr(epoch, i, num_steps, losses, quadratic_kappa):
+
 
 if __name__ == '__main__':
     train_loader, dev_loader = load_data()

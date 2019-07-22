@@ -9,7 +9,7 @@ RUN_ON_GPU = True
 RUN_ON_COLAB = True
 GIT_PATH = '/content' if RUN_ON_COLAB else '' # TODO
 
-USE_LOGGER = False
+USE_LOGGER = True
 RUN_ID = ''
 CONTINUE_FROM = None # f'save/{RUN_ID}/weights_1.pth'
 LAST_SAVE = 0
