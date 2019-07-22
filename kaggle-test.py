@@ -1,8 +1,6 @@
 KAGGLE_MODE = True
-GPU_MODE = False
 RUN_ID = 'xceptioncolab/'
 CURR_WEIGHTS = 'weights_4655.pth'
-
 import sys
 import os
 import cv2
@@ -16,21 +14,15 @@ from PIL import Image, ImageFile
 from tqdm import tqdm
 
 if KAGGLE_MODE:
-    sys.path.insert(0, '../input/pretrainedmodels/pretrainedmodels/pretrained-models.pytorch-master/')
-    sys.path.insert(0, '../input/cnnfinetune/pytorch-cnn-finetune-master/pytorch-cnn-finetune-master/')
-elif GPU_MODE:
-    sys.path.insert(0, '/home/zephyrnx_gmail_com/aptos-blindness/assets/pretrained-models.pytorch-master')
-    sys.path.insert(0, '/home/zephyrnx_gmail_com/aptos-blindness/assets/pytorch-cnn-finetune-master')
+    sys.path.append('../input/efficientnet/efficientnet-pytorch/EfficientNet-PyTorch/')
 
-import pretrainedmodels
-from cnn_finetune import make_model
+from efficientnet_pytorch import EfficientNet
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-INPUT_SHAPE = (600, 450)
-SAVE_PATH = '../input/' if KAGGLE_MODE else 'save/'
-if KAGGLE_MODE or GPU_MODE: SAVE_PATH += RUN_ID
-CURR_MODEL_WEIGHTS = SAVE_PATH + CURR_WEIGHTS
+INPUT_SHAPE = (256, 256)
 DATA_PATH = '../input/aptos2019-blindness-detection/' if KAGGLE_MODE else 'data/'
+SAVE_PATH = '../input/' + RUN_ID if KAGGLE_MODE else 'save/'
+CURR_MODEL_WEIGHTS = SAVE_PATH + CURR_WEIGHTS
 TTA = 10
 BATCH_SIZE = 32
 CUTOFFS = np.array([0.5, 1.5, 2.5, 3.5])
@@ -38,7 +30,6 @@ CUTOFFS = np.array([0.5, 1.5, 2.5, 3.5])
 class RetinopathyDataset(Dataset):
     def __init__(self, csv_file):
         self.data = pd.read_csv(csv_file)
-        self.preprocess()
         self.transform = transforms.Compose([
             transforms.Resize(INPUT_SHAPE),
             transforms.RandomHorizontalFlip(),
@@ -50,42 +41,31 @@ class RetinopathyDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
+        def crop_image_from_gray(img, tol=7):
+            if img.ndim == 2:
+                mask = img > tol
+                return img[np.ix_(mask.any(1),mask.any(0))]
+            elif img.ndim == 3:
+                gray_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+                mask = gray_img > tol
+
+                check_shape = img[:,:,0][np.ix_(mask.any(1),mask.any(0))].shape[0]
+                if (check_shape != 0): # image is too dark so that we crop out everything,
+                    img1 = img[:,:,0][np.ix_(mask.any(1),mask.any(0))]
+                    img2 = img[:,:,1][np.ix_(mask.any(1),mask.any(0))]
+                    img3 = img[:,:,2][np.ix_(mask.any(1),mask.any(0))]
+                    img = np.stack([img1, img2, img3], axis=-1)
+                return img
+
         img_name = os.path.join(DATA_PATH + 'test_images', self.data.loc[idx, 'id_code'] + '.png')
-        image = Image.open(img_name)
+        image = cv2.imread(img_name)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = crop_image_from_gray(image)
+        image = cv2.resize(image, INPUT_SHAPE)
+        image = cv2.addWeighted(image, 4, cv2.GaussianBlur(image, (0,0), 30), -4, 128)
+        image = transforms.ToPILImage()(image)
         image = self.transform(image)
         return image
-
-    def __getitem__(self, idx):
-        def scaleRadius(img, scale):
-            x = img[img.shape[0]//2, :, :].sum(axis=1)
-            r = (x > x.mean() / 10).sum() / 2
-            s = scale * 1.0 / r
-            return cv2.resize(img, (0,0), fx=s, fy=s)
-        scale = 300
-        img_name = os.path.join(DATA_PATH + 'test_images', self.data.loc[idx, 'id_code'] + '.png')
-        orig = cv2.imread(img_name)
-        # Scale image to a given radius.
-        a = scaleRadius(orig, scale)
-        # Subtract local mean color.
-        a = cv2.addWeighted(a, 4, cv2.GaussianBlur(a, (0,0), scale/30), -4, 128)
-        # Remove outer 10%.
-        b = np.zeros(a.shape)
-        cv2.circle(b, (a.shape[1]//2, a.shape[0]//2), int(scale*0.9), (1, 1, 1), -1, 8, 0)
-        img = a*b + 128*(1-b)
-        img = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
-        img = Image.fromarray(img.astype('uint8'), 'RGB')
-        img = Image.open(img_name)
-        image = self.transform(img)
-        return image
-
-class Xception(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.xception = make_model('xception', num_classes=1, pretrained=False, pool=nn.AdaptiveMaxPool2d(1))
-
-    def forward(self, input): # in = (b, 3, 299, 299)
-        x = self.xception(input)  # out = (b, 1)
-        return x
 
 def truncated(test_preds):
     for i, pred in enumerate(test_preds):
@@ -108,15 +88,26 @@ def rounded(test_preds):
     return test_preds
 
 def test():
+    try:
+        sample = pd.read_csv('../input/aptos2019-blindness-detection/sample_submission.csv')
+    except:
+        sample = pd.read_csv('../input/sample_submission.csv')
+
+    if len(sample) < 2000:
+        sample.to_csv('submission.csv',index=False)
+        return
+
     with torch.no_grad():
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-        model = Xception()
+        model = EfficientNet.from_name('efficientnet-b0')
+        in_features = model._fc.in_features
+        model._fc = nn.Linear(in_features, 1)
         model.eval()
 
-        if KAGGLE_MODE or GPU_MODE:
-            weights = torch.load(CURR_MODEL_WEIGHTS)
-            model.load_state_dict(weights, strict=False)
+        if KAGGLE_MODE:
+#             weights = torch.load(CURR_MODEL_WEIGHTS)
+#             model.load_state_dict(weights, strict=False)
             model.cuda()
         else:
             weights = torch.load(CURR_MODEL_WEIGHTS, map_location=lambda storage, loc: storage)
@@ -134,10 +125,9 @@ def test():
 
         test_preds = test_preds.sum(axis=0) / float(TTA)
         test_preds = truncated(test_preds)
-
-        sample = pd.read_csv(DATA_PATH + 'sample_submission.csv')
         sample.diagnosis = test_preds.astype(int)
         sample.to_csv('submission.csv', index=False)
+
 
 if __name__ == '__main__':
     test()
