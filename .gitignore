@@ -4,6 +4,7 @@ data/*
 *.pth
 save/events*
 !data/*.csv
+assets/
 
 ####################
 
