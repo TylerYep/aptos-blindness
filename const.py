@@ -18,16 +18,16 @@ LAST_SAVE = 0
 
 DATA_PATH = '../gdrive/My Drive/Colab Notebooks/' if RUN_ON_COLAB else 'data/'
 if RUN_ON_GPU:
-    BATCH_SIZE = 12
+    BATCH_SIZE = 16
     TRAIN_CSV = 'data/train.csv'
 else:
-    BATCH_SIZE = 8
+    BATCH_SIZE = 6
     TRAIN_CSV = 'data/train-small.csv'
 
-LEARNING_RATE = 3e-4
-MAX_STEPS_PER_EPOCH = 15000
+LEARNING_RATE = 1e-3
+MAX_STEPS_PER_EPOCH = 150000
 NUM_EPOCHS = 1000
 
-INPUT_SHAPE = (600, 450)
+INPUT_SHAPE = (300, 300)
 DEV_CSV = 'data/dev.csv'
 TEST_CSV = 'data/test.csv'
