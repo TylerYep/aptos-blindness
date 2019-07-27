@@ -27,7 +27,7 @@ def train(model, train_loader, dev_loader):
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=const.LEARNING_RATE)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.5)
+    # lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.5)
     if const.USE_LOGGER:
         tbx = SummaryWriter(f'save/{const.RUN_ID}/')
 
@@ -91,7 +91,7 @@ def train(model, train_loader, dev_loader):
                     print(f'DEV loss {losses.val:.4f} ({losses.avg:.4f})\t kappa {quadratic_kappa:.4f}')
             epoch_loss = running_loss / len(dataloader)
             print('Training Loss: {:.4f}'.format(epoch_loss))
-        lr_scheduler.step()
+        # lr_scheduler.step()
 
 if __name__ == '__main__':
     train_loader, dev_loader = load_data()
