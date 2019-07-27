@@ -4,6 +4,8 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image, ImageFile
+import cv2
+from preprocess import preprocess
 import const
 
 class RetinopathyDataset(Dataset):
@@ -11,8 +13,8 @@ class RetinopathyDataset(Dataset):
         self.mode = mode
         self.data = pd.read_csv(csv_file)
         self.transform = transforms.Compose([
-            transforms.Resize(const.INPUT_SHAPE),
             transforms.RandomHorizontalFlip(),
+            transforms.RandomRotation((-120, 120)),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
@@ -21,10 +23,10 @@ class RetinopathyDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        # folder = 'train_images/' if self.mode == 'train' else 'test_images'
-        folder = 'preprocessed_train/' if self.mode == 'train' else 'preprocessed_test'
+        folder = 'train_images/' if self.mode == 'train' else 'test_images'
         img_name = os.path.join(const.DATA_PATH + folder, self.data.loc[idx, 'id_code'] + '.png')
-        image = Image.open(img_name)
+        image = preprocess(img_name)
+        image = transforms.ToPILImage()(image)
         image = self.transform(image)
         if self.mode == 'train':
             label = self.data.loc[idx, 'diagnosis']

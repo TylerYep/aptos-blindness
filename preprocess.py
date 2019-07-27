@@ -3,6 +3,7 @@ import cv2
 import glob
 import numpy as np
 from tqdm import tqdm
+import const
 
 def scale_radius(img, scale):
     x = img[img.shape[0]//2, :, :].sum(axis=1)
@@ -38,25 +39,30 @@ def circle_crop(img):
     img = crop_image_from_gray(img)
     return img, r
 
-def preprocess(mode='train'):
-    scale = 300
+def preprocess(f):
+    img = cv2.imread(f)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    # Scale image to a given radius.
+    # img, r = circle_crop(img)
+    img = crop_image_from_gray(img)
+    img = cv2.resize(img, const.INPUT_SHAPE)
+
+    # Subtract local mean color.
+    img = cv2.addWeighted(img, 4, cv2.GaussianBlur(img, (0,0), 30), -4, 128)
+
+    # Remove outer 5%.
+    # b = np.zeros(img.shape)
+    # cv2.circle(b, (img.shape[1] // 2, img.shape[0] // 2), int(r*0.96), (1, 1, 1), -1, 8, 0)
+    # img = img*b + 128*(1-b)
+    return img
+
+def preprocess_files(mode='train'):
     for f in tqdm(glob.glob(f'data/{mode}_images/*.png')):
-        img = cv2.imread(f)
-
-        # Scale image to a given radius.
-        img, r = circle_crop(img)
-
-        # Subtract local mean color.
-        img = cv2.addWeighted(img, 4, cv2.GaussianBlur(img, (0,0), scale/30), -4, 128)
-
-        # Remove outer 5%.
-        b = np.zeros(img.shape)
-        cv2.circle(b, (img.shape[1]//2, img.shape[0]//2), int(r*0.95), (1, 1, 1), -1, 8, 0)
-        img = img*b + 128*(1-b)
-
+        preprocess(f)
         filename = f[f.rfind('/')+1:]
         cv2.imwrite(f'data/preprocessed_{mode}/{filename}', img)
 
 if __name__ == '__main__':
-    preprocess('train')
-    preprocess('test')
+    preprocess_files('train')
+    preprocess_files('test')

@@ -25,7 +25,7 @@ SAVE_PATH = '../input/' + RUN_ID if KAGGLE_MODE else 'save/'
 CURR_MODEL_WEIGHTS = SAVE_PATH + CURR_WEIGHTS
 TTA = 10
 BATCH_SIZE = 32
-CUTOFFS = np.array([0.5, 1.5, 2.5, 3.5])
+CUTOFFS = np.array([0.57, 1.37, 2.57, 3.57])
 
 class RetinopathyDataset(Dataset):
     def __init__(self, csv_file):
@@ -78,13 +78,14 @@ class RetinopathyDataset(Dataset):
         img, r = circle_crop(img)
 
         # Subtract local mean color.
-        img = cv2.addWeighted(img, 4, cv2.GaussianBlur(img, (0,0), scale/30), -4, 128)
+        img = cv2.addWeighted(img, 4, cv2.GaussianBlur(img, (0,0), 30), -4, 128)
 
         # Remove outer 5%.
-        b = np.zeros(img.shape)
-        cv2.circle(b, (img.shape[1]//2, img.shape[0]//2), int(r*0.95), (1, 1, 1), -1, 8, 0)
-        img = img*b + 128*(1-b)
-        img = transforms.ToPILImage()(img.astype(np.uint8))
+        # b = np.zeros(img.shape)
+        # cv2.circle(b, (img.shape[1] // 2, img.shape[0] // 2), int(r*0.96), (1, 1, 1), -1, 8, 0)
+        # img = img*b + 128*(1-b)
+
+        img = transforms.ToPILImage()(img)
         img = self.transform(img)
         return img
 
@@ -126,25 +127,21 @@ def test():
         model._fc = nn.Linear(in_features, 1)
         model.eval()
 
-        if KAGGLE_MODE:
-            weights = torch.load(CURR_MODEL_WEIGHTS)
-            model.load_state_dict(weights, strict=False)
-            model.cuda()
-        else:
-            weights = torch.load(CURR_MODEL_WEIGHTS, map_location=lambda storage, loc: storage)
-            model.load_state_dict(weights, strict=False)
+        weights = torch.load(CURR_MODEL_WEIGHTS)
+        model.load_state_dict(weights)
+        model.to(device)
 
         test_dataset = RetinopathyDataset(csv_file=DATA_PATH + 'sample_submission.csv')
         test_data_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=4)
 
-        test_preds = np.zeros((TTA, len(test_dataset)))
+        test_preds = np.zeros((len(test_dataset), 1))
         for t in range(TTA):
             for i, input in enumerate(tqdm(test_data_loader)):
                 input = input.to(device)
                 pred = model(input)
-                test_preds[t, i*BATCH_SIZE : (i+1)*BATCH_SIZE] = pred.detach().cpu().squeeze().numpy().ravel().reshape(1, -1)
+                test_preds[t, i*BATCH_SIZE : (i+1)*BATCH_SIZE] += pred.detach().cpu().squeeze().numpy().ravel().reshape(1, -1)
 
-        test_preds = test_preds.sum(axis=0) / float(TTA)
+        test_preds = test_preds / TTA
         test_preds = truncated(test_preds)
         sample.diagnosis = test_preds.astype(int)
         sample.to_csv('submission.csv', index=False)
